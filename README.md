@@ -1,6 +1,6 @@
 # Brainfuck Interpreter
 
-This is just a quick and dirty Brainfuck Interpreter that I wrote in C. I can't promise it will even run on your system as I have only compiled and ran it on a 64bit arch linux system with GCC.
+This is just a quick and dirty [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) Interpreter that I wrote in C. I can't promise it will even run on your system as I have only compiled and ran it on a 64bit arch linux system with GCC.
 
 It is a safe interpreter that allows a user configured memory size. It prevents undefined behavior by ensuring the instruction and data pointers are never out of bounds. If so, the program terminates.
 
