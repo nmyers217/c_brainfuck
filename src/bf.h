@@ -53,7 +53,7 @@ void free_program(Program* program);
 
 
 /**
- * Advance a program to its next state by:
+ * Advance a program to its next state with the following steps:
  * 1) Lookup the instruction using pc
  * 2) Execute the instruction, modify the memory or dp if needed
  * 3) Advance pc accordingly

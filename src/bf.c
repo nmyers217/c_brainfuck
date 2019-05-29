@@ -90,12 +90,88 @@ void free_program(Program* program) {
 }
 
 
+void next_state(Program* program) {
+    if (program->pc < 0 || program->pc >= program->instruction_count) {
+        // TODO: error handling
+        return;
+    }
 
-int main(void) {
-    char const* hello_world = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+    char instruction = program->instructions[program->pc];
+
+    // TODO: error handling around dp moving out of bounds
+    switch (instruction) {
+        case '>':
+            ++program->dp;
+            break;
+        case '<':
+            --program->dp;
+            break;
+        case '+':
+            ++*program->dp;
+            break;
+        case '-':
+            --*program->dp;
+            break;
+        case '.':
+            program->write_fn(*program->dp);
+            break;
+        case ',':
+            *program->dp = program->read_fn();
+            break;
+        case '[':
+            if (*program->dp) {
+                break;
+            }
+            uint32_t open_bracket_count = 0;
+            for (uint32_t i = program->pc; i < program->instruction_count; i++) {
+                if (program->instructions[i] == '[') {
+                    open_bracket_count++;
+                } else if (program->instructions[i] == ']') {
+                    open_bracket_count--;
+                    if (open_bracket_count == 0) {
+                        program->pc = i;
+                        break;
+                    }
+                }
+            }
+            // TODO: error handling for no matching bracket
+            break;
+        case ']':
+            if (*program->dp == 0) {
+                break;
+            }
+            uint32_t close_bracket_count = 0;
+            for (uint32_t i = program->pc; i >= 0; i--) {
+                if (program->instructions[i] == ']') {
+                    close_bracket_count++;
+                } else if (program->instructions[i] == '[') {
+                    close_bracket_count--;
+                    if (close_bracket_count == 0) {
+                        program->pc = i;
+                        break;
+                    }
+                }
+            }
+            // TODO: error handling for no matching bracket
+            break;
+        default:
+            break;
+    }
+
+    program->pc++;
+}
+
+
+int main(int argc, char const* argv[]) {
+    // TODO: Error handling with args
+    printf("%s %s %s\n", argv[0], argv[1], argv[2]);
 
     Program p;
-    init_program(&p, hello_world, strlen(hello_world), 3000, getchar, putchar);
+    init_program_from_file(&p, argv[1], atoi(argv[2]), getchar, putchar);
+
+    while(p.pc < p.instruction_count) {
+        next_state(&p);
+    }
 
     free_program(&p);
 
