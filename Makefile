@@ -1,13 +1,13 @@
 CC = gcc
 OUT = bf
 OPTS = -Wall -O3
-DEBUG_OPTS = -Wall
+DEBUG_OPTS = -g -Wall
 
 all:
-	$(CC) src/bf.c -o $(OUT) $(OPTS)
+	$(CC) $(OPTS) src/bf.c -o $(OUT)
 
 debug:
-	$(CC) -g src/bf.c -o $(OUT) $(DEBUG_OPTS)
+	$(CC) $(DEBUG_OPTS) src/bf.c -o $(OUT)
 
 clean:
 	rm $(OUT)

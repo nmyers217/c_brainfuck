@@ -5,6 +5,53 @@
 #include "./bf.h"
 
 
+void init_jump_index(Program* program) {
+    for (uint32_t i = 0; i < program->instruction_count; i++) {
+        char instruction = program->instructions[i];
+
+        int32_t jump_pc = -1;
+        uint32_t bracket_level = 0;
+
+        switch(instruction) {
+            case '[':
+                for (int32_t j = i; j < program->instruction_count; j++) {
+                    if (program->instructions[j] == '[') {
+                        bracket_level++;
+                    } else if (program->instructions[j] == ']') {
+                        bracket_level--;
+                        if (bracket_level == 0) {
+                            jump_pc = j;
+                            break;
+                        }
+                    }
+                }
+                break;
+            case ']':
+                for (int32_t j = i; j >= 0; j--) {
+                    if (program->instructions[j] == ']') {
+                        bracket_level++;
+                    } else if (program->instructions[j] == '[') {
+                        bracket_level--;
+                        if (bracket_level == 0) {
+                            jump_pc = j;
+                            break;
+                        }
+                    }
+                }
+                break;
+            default:
+                jump_pc = i;
+                break; } 
+        if (jump_pc < 0) {
+            fprintf(stderr, "Bracket at index %i has no matching bracket!\n", i);
+            exit(EXIT_FAILURE);
+        }
+
+        program->jump_index[i] = jump_pc;
+    }
+}
+
+
 void init_program(
     Program* program,
     char const* instructions,
@@ -18,8 +65,16 @@ void init_program(
         fprintf(stderr, "Could not provision memory for instructions!\n");
         exit(EXIT_FAILURE);
     }
+
+    program->jump_index = malloc(count * sizeof(uint32_t));
+    if (program->jump_index == NULL) {
+        fprintf(stderr, "Could not provision jump_index memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
     program->instruction_count = count;
     program->pc = 0;
+
     if (memcpy(program->instructions, instructions, count) == NULL) {
         fprintf(stderr, "Could not copy instructions!\n");
         exit(EXIT_FAILURE);
@@ -30,11 +85,14 @@ void init_program(
         fprintf(stderr, "Could not provision program memory!\n");
         exit(EXIT_FAILURE);
     }
+
     program->memory_size = memory_size;
     program->dp = program->memory;
 
     program->read_fn = read_fn;
     program->write_fn = write_fn;
+
+    init_jump_index(program);
 }
 
 
@@ -66,14 +124,14 @@ void init_program_from_file(
         exit(EXIT_FAILURE);
     }
 
-
     if (fclose(fp) != 0) {
         fprintf(stderr, "Could not close file %s\n", filepath);
         exit(EXIT_FAILURE);
     }
 
     init_program(program, buffer, fsize, memory_size, read_fn, write_fn);
-free(buffer);
+
+    free(buffer);
     buffer = NULL;
 }
 
@@ -81,10 +139,15 @@ free(buffer);
 void free_program(Program* program) {
     free(program->instructions);
     program->instructions = NULL;
-    program->instruction_count = 0;
-    program->pc = 0;
+
+    free(program->jump_index);
+    program->jump_index = NULL;
+
     free(program->memory);
     program->memory = NULL;
+
+    program->instruction_count = 0;
+    program->pc = 0;
     program->memory_size = 0;
     program->dp = 0;
     program->read_fn = NULL;
@@ -99,10 +162,10 @@ void next_state(Program* program) {
     }
 
 
-	if (program->dp < program->memory || program->dp >= program-> memory + program->memory_size) {
+    if (program->dp < program->memory || program->dp >= program-> memory + program->memory_size) {
         fprintf(stderr, "Invalid data pointer!");
         exit(EXIT_FAILURE);
-	}
+    }
 
     char instruction = program->instructions[program->pc];
     switch (instruction) {
@@ -125,42 +188,14 @@ void next_state(Program* program) {
             *program->dp = program->read_fn();
             break;
         case '[':
-            if (*program->dp > 0) {
-                break;
+            if (*program->dp == 0) {
+                program->pc = program->jump_index[program->pc];
             }
-            uint32_t open_bracket_count = 0;
-            // TODO: index jump locations in advance of running the program
-            for (uint32_t i = program->pc; i < program->instruction_count; i++) {
-                if (program->instructions[i] == '[') {
-                    open_bracket_count++;
-                } else if (program->instructions[i] == ']') {
-                    open_bracket_count--;
-                    if (open_bracket_count == 0) {
-                        program->pc = i;
-                        break;
-                    }
-                }
-            }
-            // TODO: error handling for no matching bracket
             break;
         case ']':
-            if (*program->dp == 0) {
-                break;
+            if (*program->dp != 0) {
+                program->pc = program->jump_index[program->pc];
             }
-            uint32_t close_bracket_count = 0;
-            // TODO: index jump locations in advance of running the program
-            for (uint32_t i = program->pc; i >= 0; i--) {
-                if (program->instructions[i] == ']') {
-                    close_bracket_count++;
-                } else if (program->instructions[i] == '[') {
-                    close_bracket_count--;
-                    if (close_bracket_count == 0) {
-                        program->pc = i;
-                        break;
-                    }
-                }
-            }
-            // TODO: error handling for no matching bracket in advance of running the program
             break;
         default:
             break;
@@ -172,7 +207,7 @@ void next_state(Program* program) {
 
 int main(int argc, char const* argv[]) {
     // TODO: Error handling with args
-    printf("%s %s %s\n", argv[0], argv[1], argv[2]);
+    printf("%s %s %s\n\n", argv[0], argv[1], argv[2]);
 
     Program p;
     init_program_from_file(&p, argv[1], atoi(argv[2]), getchar, putchar);

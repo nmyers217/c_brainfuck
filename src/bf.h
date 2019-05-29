@@ -10,15 +10,23 @@ typedef int (*WriteFn)(int);
 typedef struct _Program {
     char* instructions;
     size_t instruction_count;
-    uint16_t pc; // The program counter
+
+    // An index of jump locations (index with pc to get the pc to jump to)
+    uint32_t* jump_index;
+
+    // The program counter
+    uint16_t pc;
 
     uint8_t* memory;
     size_t memory_size;
-    uint8_t* dp; // The data pointer
+
+    // The data pointer
+    uint8_t* dp;
 
     ReadFn read_fn;
     WriteFn write_fn;
 } Program;
+
 
 
 /**
