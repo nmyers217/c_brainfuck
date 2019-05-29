@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "./bf.h"
 
@@ -205,12 +207,40 @@ void next_state(Program* program) {
 }
 
 
-int main(int argc, char const* argv[]) {
-    // TODO: Error handling with args
-    printf("%s %s %s\n\n", argv[0], argv[1], argv[2]);
+int main(int argc, char* const argv[]) {
+    char const* filepath = NULL;
+    size_t memory_size = 30000;
+
+    int32_t c;
+    while ((c = getopt (argc, argv, "f:m:")) != -1) {
+        switch (c)
+        {
+            case 'f':
+                filepath = optarg;
+                break;
+            case 'm':
+                memory_size = atoi(optarg);
+                break;
+            case '?':
+                if (optopt == 'f') {
+                    fprintf(stderr, "Option -%c requires a filepath as an argument.\n", optopt);
+                } else if (isprint(optopt)) {
+                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                } else {
+                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                }
+                return EXIT_FAILURE;
+            default:
+                exit(EXIT_FAILURE);
+        }
+    }
+
+
+    printf("Loading file (-f) %s with %li bytes of memory (-m)\n\n", filepath, memory_size);
+
 
     Program p;
-    init_program_from_file(&p, argv[1], atoi(argv[2]), getchar, putchar);
+    init_program_from_file(&p, filepath, memory_size, getchar, putchar);
 
     while(p.pc < p.instruction_count) {
         next_state(&p);
