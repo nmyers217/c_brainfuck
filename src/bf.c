@@ -13,7 +13,9 @@ void init_program(
     ReadFn read_fn,
     WriteFn write_fn
 ) {
-    program->instructions = malloc(count); if (program->instructions == NULL) { fprintf(stderr, "Could not provision memory for instructions!\n");
+    program->instructions = malloc(count);
+    if (program->instructions == NULL) {
+        fprintf(stderr, "Could not provision memory for instructions!\n");
         exit(EXIT_FAILURE);
     }
     program->instruction_count = count;
@@ -23,7 +25,7 @@ void init_program(
         exit(EXIT_FAILURE);
     }
 
-    program->memory = malloc(memory_size);
+    program->memory = calloc(memory_size, 1);
     if (program->memory == NULL) {
         fprintf(stderr, "Could not provision program memory!\n");
         exit(EXIT_FAILURE);
@@ -119,10 +121,11 @@ void next_state(Program* program) {
             *program->dp = program->read_fn();
             break;
         case '[':
-            if (*program->dp) {
+            if (*program->dp > 0) {
                 break;
             }
             uint32_t open_bracket_count = 0;
+            // TODO: i should probably cache the instruction to jump to for these as i go through them
             for (uint32_t i = program->pc; i < program->instruction_count; i++) {
                 if (program->instructions[i] == '[') {
                     open_bracket_count++;
@@ -141,6 +144,7 @@ void next_state(Program* program) {
                 break;
             }
             uint32_t close_bracket_count = 0;
+            // TODO: i should probably cache the instruction to jump to for these as i go through them
             for (uint32_t i = program->pc; i >= 0; i--) {
                 if (program->instructions[i] == ']') {
                     close_bracket_count++;
