@@ -94,13 +94,17 @@ void free_program(Program* program) {
 
 void next_state(Program* program) {
     if (program->pc < 0 || program->pc >= program->instruction_count) {
-        // TODO: error handling
-        return;
+        fprintf(stderr, "Invalid prorgram counter!");
+        exit(EXIT_FAILURE);
     }
 
-    char instruction = program->instructions[program->pc];
 
-    // TODO: error handling around dp moving out of bounds
+	if (program->dp < program->memory || program->dp >= program-> memory + program->memory_size) {
+        fprintf(stderr, "Invalid data pointer!");
+        exit(EXIT_FAILURE);
+	}
+
+    char instruction = program->instructions[program->pc];
     switch (instruction) {
         case '>':
             ++program->dp;
@@ -125,7 +129,7 @@ void next_state(Program* program) {
                 break;
             }
             uint32_t open_bracket_count = 0;
-            // TODO: i should probably cache the instruction to jump to for these as i go through them
+            // TODO: index jump locations in advance of running the program
             for (uint32_t i = program->pc; i < program->instruction_count; i++) {
                 if (program->instructions[i] == '[') {
                     open_bracket_count++;
@@ -144,7 +148,7 @@ void next_state(Program* program) {
                 break;
             }
             uint32_t close_bracket_count = 0;
-            // TODO: i should probably cache the instruction to jump to for these as i go through them
+            // TODO: index jump locations in advance of running the program
             for (uint32_t i = program->pc; i >= 0; i--) {
                 if (program->instructions[i] == ']') {
                     close_bracket_count++;
@@ -156,7 +160,7 @@ void next_state(Program* program) {
                     }
                 }
             }
-            // TODO: error handling for no matching bracket
+            // TODO: error handling for no matching bracket in advance of running the program
             break;
         default:
             break;
